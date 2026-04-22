@@ -1,0 +1,957 @@
+
+
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Асуулттай машины уралдаан · Quiz Race</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-green:  #00ff88;
+      --neon-blue:   #00cfff;
+      --neon-pink:   #ff3cac;
+      --neon-yellow: #ffe600;
+      --neon-orange: #ff7c00;
+      --bg-deep:     #05060f;
+      --bg-card:     #0d1117;
+      --bg-glass:    rgba(255,255,255,0.05);
+      --border:      rgba(255,255,255,0.09);
+      --text-main:   #e8eaf0;
+      --text-dim:    #7a8499;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+
+    body {
+      font-family: 'Baloo 2', cursive;
+      color: var(--text-main);
+      background: var(--bg-deep);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+
+ 
+    body::before {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,255,136,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,207,255,.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      animation: gridMove 20s linear infinite;
+      z-index: 0;
+    }
+    @keyframes gridMove { to { background-position: 44px 44px; } }
+
+
+    .blob-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .blob {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.18;
+      animation: blobFloat 12s ease-in-out infinite;
+    }
+    .blob-1 { width: 480px; height: 480px; background: var(--neon-green);  top: -10%; left: -10%; animation-delay: 0s; }
+    .blob-2 { width: 360px; height: 360px; background: var(--neon-pink);   bottom: 5%; right: -8%; animation-delay: 3s; }
+    .blob-3 { width: 300px; height: 300px; background: var(--neon-blue);   top: 40%; left: 60%; animation-delay: 6s; }
+    .blob-4 { width: 220px; height: 220px; background: var(--neon-orange); top: 70%; left: 20%; animation-delay: 9s; }
+    @keyframes blobFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%      { transform: translate(30px,-20px) scale(1.06); }
+      66%      { transform: translate(-20px,15px) scale(0.95); }
+    }
+
+
+    .overlay {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(5,6,15,0.92); z-index: 900; padding: 20px;
+    }
+    #startScreen { display: none; }
+    #winnerScreen { display: none; }
+
+
+    .panel {
+      width: 100%; max-width: 560px; position: relative; z-index: 2;
+      background: var(--bg-card);
+      border: 2px solid var(--neon-green);
+      border-radius: 24px; padding: 36px 32px; text-align: center;
+      box-shadow: 0 0 60px rgba(0,255,136,0.18), 0 20px 60px rgba(0,0,0,0.6);
+      animation: popIn .45s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes popIn { from { opacity:0; transform:scale(.8) translateY(30px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .panel h1, .panel h2 { font-size: 32px; color: var(--neon-green); margin-bottom: 10px; }
+    .panel p { color: var(--text-dim); font-size: 16px; margin-bottom: 20px; }
+
+
+    .big-emoji { font-size: 72px; margin: 12px 0 20px; display: block; animation: bounce 1.2s infinite; }
+    @keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-12px); } }
+
+
+   
+    header {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 60px 20px; position: relative; z-index: 2;
+    }
+    .hero { max-width: 860px; animation: fadeUp .9s ease; }
+    .school-badge {
+      display: inline-block; font-family: 'Space Mono', monospace;
+      font-size: 12px; letter-spacing: 2px; color: var(--neon-blue);
+      border: 1px solid rgba(0,207,255,0.35); padding: 6px 18px; border-radius: 999px;
+      margin-bottom: 22px; background: rgba(0,207,255,0.07);
+    }
+    h1.hero-title {
+      font-size: 68px; font-weight: 800; line-height: 1.1; margin-bottom: 16px;
+      background: linear-gradient(120deg, var(--neon-green) 0%, var(--neon-blue) 50%, var(--neon-pink) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-shadow: none;
+    }
+    .subtitle { font-size: 19px; color: var(--text-dim); margin-bottom: 28px; max-width: 600px; margin-inline: auto; }
+
+
+    .hero-buttons { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .btn {
+      font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 15px;
+      padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn:hover { transform: translateY(-3px) scale(1.04); }
+    .btn-green {
+      background: var(--neon-green); color: #05060f;
+      box-shadow: 0 8px 24px rgba(0,255,136,0.35);
+    }
+    .btn-green:hover { box-shadow: 0 12px 32px rgba(0,255,136,0.5); }
+    .btn-blue {
+      background: transparent; color: var(--neon-blue);
+      border: 2px solid var(--neon-blue); box-shadow: 0 0 18px rgba(0,207,255,0.2);
+    }
+    .btn-blue:hover { background: rgba(0,207,255,0.1); }
+    .btn-pink {
+      background: var(--neon-pink); color: white;
+      box-shadow: 0 8px 24px rgba(255,60,172,0.35);
+    }
+    .btn-pink:hover { box-shadow: 0 12px 32px rgba(255,60,172,0.5); }
+    .btn-orange {
+      background: var(--neon-orange); color: #05060f;
+      box-shadow: 0 8px 24px rgba(255,124,0,0.35);
+    }
+    .btn-sm {
+      padding: 9px 18px; font-size: 14px; border-radius: 10px;
+    }
+
+
+
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(5,6,15,0.88); backdrop-filter: blur(14px);
+      display: flex; justify-content: center; gap: 8px; padding: 10px 16px; flex-wrap: wrap;
+      border-bottom: 1px solid rgba(0,255,136,0.12);
+    }
+    nav a {
+      color: var(--text-dim); text-decoration: none; padding: 6px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: 'Space Mono', monospace;
+      transition: .2s; border: 1px solid transparent;
+    }
+    nav a:hover { color: var(--neon-green); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.07); }
+
+
+    section {
+      max-width: 1120px; margin: 24px auto; padding: 32px 28px;
+      background: var(--bg-card); border-radius: 20px;
+      border: 1px solid var(--border); position: relative; z-index: 2;
+    }
+    section::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 20px 20px 0 0;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-blue), var(--neon-pink));
+    }
+
+
+    h2 {
+      font-size: 28px; font-weight: 800; margin-bottom: 16px;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    h3 { color: var(--neon-blue); margin-bottom: 8px; font-size: 17px; }
+    p, li { color: var(--text-dim); font-size: 16px; }
+    .highlight { color: var(--neon-green); font-weight: 700; }
+
+
+
+
+    .students { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 20px; }
+    .card {
+      background: rgba(190, 169, 169, 0.03); padding: 20px; border-radius: 16px;
+      border: 1px solid var(--border); text-align: center; transition: .3s;
+    }
+    .card:hover { transform: translateY(-5px); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.05); }
+ .avatar {
+  width: 150px;
+  height: 200px;
+  border-radius: 20px;
+  margin: 0 auto 12px;
+  overflow: hidden;
+  border: 2px solid var(--neon-green);
+  box-shadow: 0 0 20px rgba(0,255,136,0.25);
+}
+
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 18px; }
+    .feature {
+      background: rgba(255,255,255,0.03); padding: 18px; border-radius: 14px;
+      border: 1px solid var(--border); transition: .3s;
+    }
+    .feature:hover { border-color: rgba(0,207,255,.35); background: rgba(0,207,255,0.05); }
+
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .tag {
+      font-family: 'Space Mono', monospace; font-size: 12px; padding: 6px 14px; border-radius: 999px;
+      border: 1px solid rgba(0,255,136,0.4); color: var(--neon-green);
+      background: rgba(0,255,136,0.08); letter-spacing: 0.5px;
+    }
+
+
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; border-radius: 12px; overflow: hidden; }
+    th, td { border: 1px solid var(--border); padding: 12px 14px; font-size: 14px; }
+    th { background: rgba(0,255,136,0.08); color: var(--neon-green); font-family: 'Space Mono', monospace; font-size: 13px; }
+    td { color: var(--text-dim); }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+
+    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+
+    .flow-step {
+      background: rgba(0,255,136,0.06); padding: 13px 16px; border-radius: 12px; margin: 8px 0;
+      border-left: 4px solid var(--neon-green); color: var(--text-dim); font-size: 15px;
+      transition: .2s;
+    }
+    .flow-step:hover { background: rgba(0,255,136,0.1); color: var(--text-main); }
+
+
+
+
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
+    .gallery-card {
+      background: rgba(255,255,255,0.03); padding: 18px; border-radius: 16px;
+      border: 1px solid var(--border); transition: .3s;
+    }
+    .gallery-card:hover { transform: translateY(-5px); border-color: rgba(0,207,255,.35); }
+   .real-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+
+ 
+    .mock-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .mock-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid var(--border); }
+    .phone {
+      width: 230px; max-width: 100%; margin: 0 auto;
+      background: #090d15; border: 6px solid #1a2236; border-radius: 28px; padding: 16px 12px;
+      box-shadow: 0 0 30px rgba(0,255,136,0.12), inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .phone-notch { width: 70px; height: 7px; border-radius: 999px; background: #1a2236; margin: 0 auto 14px; }
+    .screen-title { text-align: center; color: var(--neon-green); font-weight: 800; margin-bottom: 12px; font-size: 14px; }
+    .app-question { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px; text-align: center; font-size: 13px; color: var(--text-main); }
+    .answer-btn { width: 100%; padding: 9px; margin-bottom: 8px; background: rgba(0,207,255,0.08); color: var(--neon-blue); border-radius: 10px; text-align: center; font-size: 13px; border: 1px solid rgba(0,207,255,0.2); }
+
+
+   
+    .race-wrap { margin-top: 16px; }
+
+
+    .scoreboard {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 18px;
+    }
+    .score-box {
+      background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px 10px; text-align: center;
+      border: 1px solid var(--border);
+    }
+    .score-box .label { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+    .score-box strong { display: block; font-size: 26px; font-weight: 800; margin-top: 4px; }
+    .score-box.active { border-color: var(--neon-green); background: rgba(0,255,136,0.07); }
+    #s-turn strong { color: var(--neon-yellow); }
+    #s-timer strong { color: var(--neon-orange); }
+    #s-1 strong { color: #ff4545; }
+    #s-2 strong { color: #4589ff; }
+    #s-3 strong { color: var(--neon-green); }
+
+
+ 
+    .track-area {
+      position: relative; border-radius: 20px; overflow: hidden;
+      background: linear-gradient(180deg, #0a0f1a 0%, #111827 100%);
+      border: 2px solid rgba(255,255,255,0.07);
+      padding: 10px 0;
+    }
+    .finish-line {
+      position: absolute; top: 0; right: 60px; width: 20px; height: 100%; z-index: 2;
+      background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 0 0 / 10px 10px;
+      box-shadow: 0 0 24px rgba(255,255,255,0.25);
+    }
+    .track-lane {
+      position: relative; height: 90px;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+      background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    }
+    .track-lane:last-child { border-bottom: none; }
+    .lane-label {
+      position: absolute; left: 10px; top: 8px; z-index: 3;
+      font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim);
+      background: rgba(0,0,0,0.4); padding: 3px 10px; border-radius: 999px;
+    }
+    .race-car {
+      position: absolute; left: 16px; top: 28px;
+      width: 78px; height: 34px; object-fit: cover; border-radius: 10px;
+      transition: left 0.55s cubic-bezier(0.34,1.3,0.64,1), transform .25s, box-shadow .25s;
+      z-index: 4; border: 2px solid rgba(255,255,255,0.18);
+    }
+    .race-car.move { transform: scale(1.1); box-shadow: 0 0 24px rgba(255,230,0,0.6); }
+    .race-car.reverse { transform: scale(0.95) scaleX(-1); box-shadow: 0 0 14px rgba(255,60,172,0.5); }
+
+
+   
+    .question-box {
+      background: rgba(255,255,255,0.03); padding: 22px; border-radius: 18px; margin-top: 16px;
+      border: 1px solid var(--border);
+    }
+    #question { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 14px; }
+
+
+    .answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 4px; }
+    .opt-btn {
+      font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 14px;
+      padding: 12px 10px; border-radius: 12px; border: 2px solid rgba(0,207,255,0.25);
+      background: rgba(0,207,255,0.07); color: var(--neon-blue); cursor: pointer;
+      transition: .2s;
+    }
+    .opt-btn:hover { background: rgba(0,207,255,0.18); border-color: var(--neon-blue); transform: translateY(-2px); }
+
+
+   
+    .timer-controls {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0 8px;
+    }
+    .controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .status {
+      margin-top: 14px; font-family: 'Space Mono', monospace; font-size: 14px;
+      color: var(--text-dim); min-height: 26px; text-align: center;
+    }
+    .status.good { color: var(--neon-green); }
+    .status.bad  { color: var(--neon-pink); }
+
+
+ 
+    #waitingMsg {
+      text-align: center; padding: 18px 10px;
+      color: var(--neon-yellow); font-family: 'Space Mono', monospace; font-size: 15px;
+    }
+
+
+    footer {
+      text-align: center; padding: 28px; z-index: 2; position: relative;
+      color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 1px;
+    }  
+    @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+
+    @media (max-width: 720px) {
+      h1.hero-title { font-size: 38px; }
+      section { margin: 14px 10px; padding: 20px 16px; }
+      .race-car { width: 58px; height: 28px; top: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="blob-layer">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+
+<div class="overlay" id="startScreen">
+  <div class="panel">
+    <h1>Quiz Race 🏎️</h1>
+    <span class="big-emoji">🏁</span>
+    <p>3 машин · 3 зам · Асуулт-хариулт · Таймер удирдлагатай интерактив demo</p>
+    <div class="hero-buttons">
+      <button class="btn btn-green" onclick="startExperience()">🚀 Эхлүүлэх</button>
+      <button class="btn btn-blue" onclick="toggleSound()" id="soundBtn">🔊 Дуу: ON</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="overlay" id="winnerScreen">
+  <div class="panel">
+    <h2>Ялагч тодорлоо! 🎉</h2>
+    <span class="big-emoji" id="winnerEmoji">🏆</span>
+    <p id="winnerText">1-р машин яллаа!</p>
+    <div class="controls" style="margin-top:20px;">
+      <button class="btn btn-green" onclick="resetRace()">🔄 Дахин тоглох</button>
+      <button class="btn btn-blue" onclick="closeWinner()">✕ Хаах</button>
+    </div>
+  </div>
+</div>
+
+
+<header>
+  <div class="hero">
+    <div class="school-badge">НЭСТ ЭДҮКЭЙШН АЙ ТИ ДУНД СУРГУУЛЬ · 2025–2026</div>
+    <h1 class="hero-title">Асуулттай машины уралдаан</h1>
+    <p class="subtitle">IoT + Arduino + MIT App Inventor ашигласан 3 машинтай боловсролын интерактив уралдааны систем</p>
+    <div class="hero-buttons">
+      <a href="#demo" class="btn btn-green">🏁 Уралдаан харах</a>
+      <a href="#scheme" class="btn btn-blue">📐 Схем</a>
+      <a href="#mockup" class="btn btn-pink">📱 App mockup</a>
+    </div>
+  </div>
+</header>
+
+
+<nav>
+  <a href="#intro">Танилцуулга</a>
+  <a href="#idea">Санаа</a>
+  <a href="#plan">Төлөвлөгөө</a>
+  <a href="#use">Ашиглах</a>
+  <a href="#parts">Эд анги</a>
+  <a href="#scheme">Схем</a>
+  <a href="#mockup">App</a>
+  <a href="#gallery">Зураг</a>
+  <a href="#demo">Уралдаан</a>
+</nav>
+
+
+<section id="intro">
+  <h2>Төслийн танилцуулга</h2>
+  <p><span class="highlight">Асуулттай машины уралдаан</span> төсөл нь IoT технологи болон MIT App Inventor платформыг ашиглан сурагчдын мэдлэгийг тоглоомын хэлбэрээр үнэлэх зорилготой интерактив систем юм. HC-05 Bluetooth модулиар Arduino UNO-д холбогдсон гар утасны аппликейшн нь машины хөдөлгөөнийг удирдана.</p>
+  <br>
+  <p>Тоглоомын үндсэн санаа нь энгийн: асуултад <b>зөв</b> хариулбал машин <b>урагшилна</b>, эхний буруу хариултад зогсоно, дараагийн буруу хариултад <b>ухарна</b>. Таймерыг хүссэн үедээ эхлүүлж, зогсоож болно.</p>
+  <div class="students">
+    <div class="card">
+  <div class="avatar">
+    <img src="anand.jpeg" alt="А. Ананд">
+  </div>
+  <h3>А. Ананд</h3>
+  <p>9а анги</p>
+</div>
+
+
+<div class="card">
+  <div class="avatar">
+    <img src="aruin-od.jpeg" alt="О. Ариун-Од">
+  </div>
+  <h3>О. Ариун-Од</h3>
+  <p>9а анги</p>
+</div>
+
+
+<div class="card">
+  <div class="avatar">
+    <img src="hangai.jpeg" alt="Ч. Хангай">
+  </div>
+  <h3>Ч. Хангай</h3>
+  <p>9а анги</p>
+</div>
+    <div class="card"><div class="avatar"><img src="sergelen.jpeg" alt="">Ж. Сэргэлэн</div><h3>Ж. Сэргэлэн</h3><p>9а анги</p></div>
+  </div>
+</section>
+
+
+<section id="idea">
+  <h2>Санаагаа хэрхэн олсон тухай</h2>
+  <p>Бид уралдааны машин болон асуулт-хариултыг холбовол хэр сонирхолтой байж болох талаар ярилцаж, тоглоомоор дамжуулан мэдлэг шалгах шинэ арга бүтээх санаа гаргасан. Ингээд энгийн уралдааныг <b>боловсролын тоглоом</b> болгон хувиргасан.</p>
+  <div class="tag-list">
+    <div class="tag">Arduino UNO</div><div class="tag">MIT App Inventor</div>
+    <div class="tag">Bluetooth HC-05</div><div class="tag">L298N Motor</div>
+    <div class="tag">IoT</div><div class="tag">Интерактив</div>
+    <div class="tag">Боловсролын технологи</div>
+  </div>
+  <div class="feature-grid" style="margin-top:20px;">
+    <div class="feature"><h3>📚 Суралцах</h3><p>Асуулт хариулж мэдлэгээ бататгана.</p></div>
+    <div class="feature"><h3>🏆 Өрсөлдөх</h3><p>3 машин зэрэг уралдаж илүү сонирхолтой.</p></div>
+    <div class="feature"><h3>⚡ Турших</h3><p>Arduino, мотор, Bluetooth бодитоор ажиллана.</p></div>
+    <div class="feature"><h3>🛠️ Бүтээх</h3><p>Программ, апп, дизайн, схемийг нэгтгэсэн.</p></div>
+  </div>
+</section>
+
+
+<section id="plan">
+  <h2>Хэрэгжүүлэх төлөвлөгөө</h2>
+  <table>
+    <tr><th>№</th><th>Үйл ажиллагаа</th><th>Хугацаа</th></tr>
+    <tr><td>1</td><td>Төслийн санаа боловсруулах, материал сонгох</td><td>1-р долоо хоног</td></tr>
+    <tr><td>2</td><td>Arduino болон эд ангиудыг бэлтгэх, хэлхээ угсрах</td><td>1-р долоо хоног</td></tr>
+    <tr><td>3</td><td>MIT App Inventor дээр апп зохиох</td><td>2-р долоо хоног</td></tr>
+    <tr><td>4</td><td>Arduino программ бичих</td><td>3-р долоо хоног</td></tr>
+    <tr><td>5</td><td>Bluetooth холболт тохируулах, туршиж үзэх</td><td>4-р долоо хоног</td></tr>
+    <tr><td>6</td><td>Машины гадна дизайн, хайрцаг хийх</td><td>4–5-р долоо хоног</td></tr>
+    <tr><td>7</td><td>Нийт систем туршилт явуулах, алдаа засах</td><td>5-р долоо хоног</td></tr>
+  </table>
+</section>
+
+
+<section id="use">
+  <h2>Хэрхэн ашиглах</h2>
+  <div class="flow-step">1. Arduino UNO болон бүх эд ангийг схемийн дагуу холбоно.</div>
+  <div class="flow-step">2. L298N мотор драйверт тэжээл өгнө.</div>
+  <div class="flow-step">3. MIT App Inventor аппыг гар утсанд суулгана.</div>
+  <div class="flow-step">4. Bluetooth ашиглан HC-05 модультай холбогдоно.</div>
+  <div class="flow-step">5. Дэлгэц дээр асуулт болон 4 хариулт гарна.</div>
+  <div class="flow-step">6. Зөв хариулбал тухайн машин урагш явна.</div>
+  <div class="flow-step">7. 2 дахь буруу хариултад тухайн машин ухарна.</div>
+  <div class="flow-step">8. Хамгийн түрүүнд барианд хүрсэн машин ялна.</div>
+</section>
+
+
+<section id="parts">
+  <h2>Ашигласан эд ангиуд</h2>
+  <div class="two-col">
+    <div>
+      <h3>1 машинд орсон эд анги</h3>
+      <table>
+        <tr><th>Эд анги</th><th>Тоо</th><th>Зориулалт</th></tr>
+        <tr><td>Arduino UNO</td><td>1</td><td>Микроконтроллер</td></tr>
+        <tr><td>HC-05 Bluetooth</td><td>1</td><td>Утасгүй холбоо</td></tr>
+        <tr><td>L298N мотор драйвер</td><td>1</td><td>Мотор удирдах</td></tr>
+        <tr><td>DC мотор</td><td>2</td><td>Машины хөдөлгөөн</td></tr>
+        <tr><td>8V батарей</td><td>1</td><td>Тэжээл</td></tr>
+        <tr><td>Холбогч утас</td><td>Олон</td><td>Холболт</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Барианы хэсгийн эд анги</h3>
+      <table>
+        <tr><th>Эд анги</th><th>Тоо</th><th>Зориулалт</th></tr>
+        <tr><td>Arduino UNO</td><td>1</td><td>Микроконтроллер</td></tr>
+        <tr><td>Ultrasonic</td><td>3</td><td>Машин илрүүлэх</td></tr>
+        <tr><td>Servo motor</td><td>3</td><td>Бариа хөдөлгөх</td></tr>
+        <tr><td>8V батарей</td><td>1</td><td>Тэжээл</td></tr>
+        <tr><td>Холбогч утас</td><td>Олон</td><td>Холболт</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+<section id="scheme">
+  <h2>Arduino схемийн зураг</h2>
+  <p>Веб дээр шууд харагдах схемийн mockup зураг. Өөрийн схемийн зургийг энд солиод ашиглах боломжтой.</p>
+  <div class="gallery">
+    <div class="gallery-card">
+      <h3>Машины үндсэн схем</h3>
+      <p>MIT App → HC-05 → Arduino UNO → L298N → DC мотор</p>
+    </div>
+    <div class="gallery-card">
+      <h3>Барианы хаалганы схем</h3>
+      <p>Ultrasonic sensor машинуудыг мэдэрч Servo gate хөдөлгөнө.</p>
+    </div>
+  </div>
+</section>
+
+
+
+
+<section id="mockup">
+  <h2>MIT App Inventor — App Screen Mockup</h2>
+  <div class="mock-grid">
+    <div class="mock-card">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="screen-title">⚡ Quiz Race App</div>
+        <div class="app-question">HC-05 модуль ямар үүрэгтэй вэ?</div>
+        <div class="answer-btn">A. Дуу өсгөгч</div>
+        <div class="answer-btn">B. Bluetooth холболт ✓</div>
+        <div class="answer-btn">C. Камер</div>
+        <div class="answer-btn">D. Зай цэнэглэгч</div>
+      </div>
+    </div>
+    <div class="mock-card">
+      <h3>App-ийн үндсэн боломжууд</h3>
+      <div class="flow-step">Bluetooth-оор HC-05-той холбогдоно</div>
+      <div class="flow-step">Асуулт болон 4 сонголт харуулна</div>
+      <div class="flow-step">Зөв хариултад машин урагшилна</div>
+      <div class="flow-step">Буруу хариултад машин зогсоно/ухарна</div>
+      <div class="flow-step">Оноо, хугацаа, ялагчийг харуулна</div>
+    </div>
+  </div>
+</section>
+
+
+
+
+<section id="gallery">
+  <h2>Төсөл бүтээх үйл явцын зураг</h2>
+  <p>Доорх хэсэгт та өөрсдийн төслийг бүтээх явцын бодит зурагнуудыг байрлуул.</p>
+  <div class="gallery">
+    <div class="gallery-card">
+      <img class="real-img" src="screenshot-1.png">
+      <p>Эд анги холбож байгаа зураг</p>
+    </div>
+    <div class="gallery-card">
+      <img class="real-img" src="Screenshot 2026-04-22 010019.png">
+      <p>Arduino код хөгжүүлэлт</p>
+    </div>
+    <div class="gallery-card">
+      <img class="real-img" src="Screenshot 2026-04-22 010141.png" alt="app">
+      <h3>App хөгжүүлэлт</h3>
+      <p>MIT App Inventor дээр ажиллаж буй зураг</p>
+    </div>
+
+
+  </div>
+</section>
+
+
+<section id="demo">
+  <h2>🏁 3 машины уралдааны Demo</h2>
+  <p>▶ Timer эхлүүлэхэд л хариулт сонгох боломжтой болно. ⏹ зогсоовол таймер зогсоно. 🔄 дахин эхлүүлбэл бүх зүйл тэгнээс эхэлнэ.</p>
+
+
+  <div class="race-wrap">
+   
+    <div class="scoreboard">
+      <div class="score-box" id="s-turn">
+        <div class="label">Тоглогч</div>
+        <strong id="turnLabel">—</strong>
+      </div>
+      <div class="score-box" id="s-timer">
+        <div class="label">Хугацаа</div>
+        <strong id="timer">45</strong>
+      </div>
+      <div class="score-box" id="s-1">
+        <div class="label">🔴 1-р машин</div>
+        <strong id="score1">0</strong>
+      </div>
+      <div class="score-box" id="s-2">
+        <div class="label">🔵 2-р машин</div>
+        <strong id="score2">0</strong>
+      </div>
+      <div class="score-box" id="s-3">
+        <div class="label">🟢 3-р машин</div>
+        <strong id="score3">0</strong>
+      </div>
+    </div>
+
+
+   
+    <div class="track-area">
+      <div class="finish-line"></div>
+      <div class="track-lane">
+        <div class="lane-label">🔴 1-р зам</div>
+        <img class="race-car" id="car1" alt="car1"
+          src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='180'><rect x='30' y='60' width='260' height='52' rx='18' fill='%23dc2626'/><rect x='90' y='36' width='110' height='42' rx='12' fill='%23fecaca'/><circle cx='98' cy='130' r='26' fill='%230d1117'/><circle cx='230' cy='130' r='26' fill='%230d1117'/><circle cx='98' cy='130' r='12' fill='%23d1d5db'/><circle cx='230' cy='130' r='12' fill='%23d1d5db'/></svg>">
+      </div>
+      <div class="track-lane">
+        <div class="lane-label">🔵 2-р зам</div>
+        <img class="race-car" id="car2" alt="car2"
+          src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='180'><rect x='30' y='60' width='260' height='52' rx='18' fill='%232563eb'/><rect x='90' y='36' width='110' height='42' rx='12' fill='%2393c5fd'/><circle cx='98' cy='130' r='26' fill='%230d1117'/><circle cx='230' cy='130' r='26' fill='%230d1117'/><circle cx='98' cy='130' r='12' fill='%23d1d5db'/><circle cx='230' cy='130' r='12' fill='%23d1d5db'/></svg>">
+      </div>
+      <div class="track-lane">
+        <div class="lane-label">🟢 3-р зам</div>
+        <img class="race-car" id="car3" alt="car3"
+          src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='180'><rect x='30' y='60' width='260' height='52' rx='18' fill='%2316a34a'/><rect x='90' y='36' width='110' height='42' rx='12' fill='%2386efac'/><circle cx='98' cy='130' r='26' fill='%230d1117'/><circle cx='230' cy='130' r='26' fill='%230d1117'/><circle cx='98' cy='130' r='12' fill='%23d1d5db'/><circle cx='230' cy='130' r='12' fill='%23d1d5db'/></svg>">
+      </div>
+    </div>
+
+
+ 
+    <div class="question-box">
+      <div id="question" style="font-size:19px;font-weight:700;color:var(--text-main);margin-bottom:12px;"></div>
+
+
+     
+      <div id="answersWrap">
+        <div id="waitingMsg">⏸ Тimer эхлүүлэхийг хүлээж байна...</div>
+        <div class="answers" id="answers" style="display:none;"></div>
+      </div>
+
+
+     
+      <div class="timer-controls">
+        <button class="btn btn-green btn-sm" onclick="startTimerManually()">▶ Эхлүүлэх</button>
+        <button class="btn btn-sm" style="background:var(--neon-orange);color:#05060f;" onclick="stopTimerManually()">⏹ Зогсоох</button>
+      </div>
+
+
+      <div class="controls">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.07);color:var(--text-dim);border:1px solid var(--border);" onclick="resetRace()">🔄 Дахин эхлүүлэх</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.07);color:var(--text-dim);border:1px solid var(--border);" onclick="toggleSound()" id="soundBtn2">🔊 Дуу: ON</button>
+      </div>
+
+
+      <div class="status" id="status">⏸ Таймер эхлүүлэхэд тоглоом эхэлнэ.</div>
+    </div>
+  </div>
+</section>
+
+
+<footer>НЭСТ ЭДҮКЭЙШН АЙ ТИ ДУНД СУРГУУЛЬ &nbsp;·&nbsp; УЛААНБААТАР, 2026</footer>
+
+
+<script>
+  const questions = [
+    { q: 'Arduino UNO юу вэ?',                   options: ['Микроконтроллер','Дэлгэц','Чанга яригч','Камер'],       correct: 0 },
+    { q: 'HC-05 модуль ямар үүрэгтэй вэ?',        options: ['Bluetooth холболт','Зай цэнэглэх','Дуу гаргах','Температур хэмжих'], correct: 0 },
+    { q: 'L298N юуг удирддаг вэ?',                options: ['LED гэрэл','Мотор','Дэлгэц','Камер'],                  correct: 1 },
+    { q: 'MIT App Inventor юунд ашиглагддаг вэ?', options: ['Апп хийх','Хувцас оёх','Зураг хэвлэх','Видео засах'], correct: 0 },
+    { q: 'Ultrasonic sensor ямар үүрэгтэй вэ?',   options: ['Зай хадгалах','Зай хэмжих','Температур өсгөх','Дуу тоглуулах'], correct: 1 },
+    { q: 'Servo motor юу хийдэг вэ?',             options: ['Хаалга хөдөлгөнө','Дэлгэц асаана','Интернет өгнө','Зай цэнэглэнэ'], correct: 0 }
+  ];
+
+
+  const TIMER_START  = 45;
+  const WIN_POSITION = 860;
+
+
+  const players = [
+    { id: 1, pos: 16, score: 0, wrong: 0, el: null, scoreEl: null },
+    { id: 2, pos: 16, score: 0, wrong: 0, el: null, scoreEl: null },
+    { id: 3, pos: 16, score: 0, wrong: 0, el: null, scoreEl: null }
+  ];
+
+
+  let currentIndex       = 0;
+  let currentPlayerIndex = 0;
+  let timeLeft           = TIMER_START;
+  let gameOver           = false;
+  let soundOn            = true;
+  let timerInterval      = null;
+  let timerStarted       = false;  
+
+
+  const questionEl   = document.getElementById('question');
+  const answersEl    = document.getElementById('answers');
+  const waitingMsg   = document.getElementById('waitingMsg');
+  const statusEl     = document.getElementById('status');
+  const turnLabel    = document.getElementById('turnLabel');
+  const timerEl      = document.getElementById('timer');
+  const winnerScreen = document.getElementById('winnerScreen');
+  const winnerText   = document.getElementById('winnerText');
+  const winnerEmoji  = document.getElementById('winnerEmoji');
+  const soundBtn     = document.getElementById('soundBtn');
+  const soundBtn2    = document.getElementById('soundBtn2');
+
+
+  players[0].el = document.getElementById('car1'); players[0].scoreEl = document.getElementById('score1');
+  players[1].el = document.getElementById('car2'); players[1].scoreEl = document.getElementById('score2');
+  players[2].el = document.getElementById('car3'); players[2].scoreEl = document.getElementById('score3');
+
+
+
+
+
+
+  function startExperience() {
+    document.getElementById('startScreen').style.display = 'none';
+    renderQuestion();
+    beep(740, 0.1);
+ 
+  }
+
+
+ 
+  function renderQuestion() {
+    const q      = questions[currentIndex];
+    const player = players[currentPlayerIndex];
+    questionEl.textContent  = q.q;
+    turnLabel.textContent   = player.id + '-р машин';
+
+
+    answersEl.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className   = 'opt-btn';
+      btn.textContent = ['A','B','C','D'][i] + '. ' + opt;
+      btn.onclick     = () => selectAnswer(i);
+      answersEl.appendChild(btn);
+    });
+
+
+ 
+    setAnswerVisibility(timerStarted && !gameOver);
+  }
+
+
+  function setAnswerVisibility(show) {
+    answersEl.style.display  = show ? 'grid' : 'none';
+    waitingMsg.style.display = show ? 'none'  : 'block';
+  }
+
+
+  function startTimerManually() {
+    if (gameOver) return;
+    fullReset(false);        
+
+
+    timerStarted = true;
+    setAnswerVisibility(true);
+    statusEl.className = 'status good';
+    statusEl.textContent = '▶ Тimer ажиллаж байна. 1-р машин эхэлнэ.';
+    beep(880, 0.1);
+
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (gameOver) return;
+      timeLeft--;
+      timerEl.textContent = timeLeft;
+      if (timeLeft <= 0) finishByScore();
+    }, 1000);
+  }
+
+
+  function stopTimerManually() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    beep(440, 0.1);
+    statusEl.className = 'status';
+    statusEl.textContent = '⏸ Таймер зогссон. Үргэлжлүүлэхийн тулд ▶ дарна уу.';
+    setAnswerVisibility(false);
+  }
+  function selectAnswer(index) {
+    if (gameOver || !timerStarted) return;
+    const q      = questions[currentIndex];
+    const player = players[currentPlayerIndex];
+    const correct = index === q.correct;
+
+
+    if (correct) {
+      player.pos   += 70;
+      player.score += 10;
+      player.wrong  = 0;
+      statusEl.className   = 'status good';
+      statusEl.textContent = '✅ ' + player.id + '-р машин зөв хариуллаа! Урагшиллаа.';
+      beep(880, 0.12);
+      player.el.classList.remove('reverse');
+    } else {
+      player.wrong++;
+      beep(220, 0.14);
+      if (player.wrong >= 2) {
+        player.pos -= 40;
+        if (player.pos < 16) player.pos = 16;
+        player.wrong = 0;
+        statusEl.className   = 'status bad';
+        statusEl.textContent = '↩️ ' + player.id + '-р машин 2 буруу хариулт өглөө. Ухарлаа.';
+        player.el.classList.add('reverse');
+        setTimeout(() => player.el.classList.remove('reverse'), 600);
+      } else {
+        statusEl.className   = 'status bad';
+        statusEl.textContent = '❌ ' + player.id + '-р машин буруу хариуллаа. Байрандаа үлдлээ.';
+      }
+    }
+
+
+    player.el.style.left = player.pos + 'px';
+    animateCar(player.el);
+    updateScores();
+
+
+    if (player.pos >= WIN_POSITION) {
+      showWinner(player.id + '-р машин барианд орж яллаа! 🎉', '🏆');
+      return;
+    }
+
+
+    currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+    currentIndex       = (currentIndex + 1) % questions.length;
+    renderQuestion();
+  }
+
+
+  function animateCar(el) {
+    el.classList.add('move');
+    setTimeout(() => el.classList.remove('move'), 300);
+  }
+
+
+  function updateScores() {
+    players.forEach(p => { p.scoreEl.textContent = p.score; });
+  }
+
+
+ 
+  function showWinner(text, emoji) {
+    gameOver = true;
+    clearInterval(timerInterval); timerInterval = null;
+    winnerText.textContent  = text;
+    winnerEmoji.textContent = emoji;
+    winnerScreen.style.display = 'flex';
+    statusEl.className   = 'status good';
+    statusEl.textContent = '🏁 Тоглоом дууслаа!';
+    setAnswerVisibility(false);
+    beep(990, 0.15);
+    setTimeout(() => beep(1180, 0.18), 180);
+  }
+
+
+  function finishByScore() {
+    const maxScore = Math.max(...players.map(p => p.score));
+    const winners  = players.filter(p => p.score === maxScore);
+    if (winners.length === 1) {
+      showWinner('Хугацаа дууслаа. ' + winners[0].id + '-р машин оноогоор яллаа!', '🏁');
+    } else {
+      showWinner('Хугацаа дууслаа. Тэнцлээ!', '🤝');
+    }
+  }
+
+
+  function closeWinner() { winnerScreen.style.display = 'none'; }
+
+
+ 
+  function fullReset(closeWin = true) {
+    clearInterval(timerInterval); timerInterval = null;
+    currentIndex       = 0;
+    currentPlayerIndex = 0;
+    timeLeft           = TIMER_START;
+    gameOver           = false;
+    timerStarted       = false;
+
+
+    players.forEach(p => {
+      p.pos   = 16; p.score = 0; p.wrong = 0;
+      p.el.style.left = '16px';
+      p.el.classList.remove('move','reverse');
+    });
+
+
+    updateScores();
+    timerEl.textContent = TIMER_START;
+    turnLabel.textContent = '—';
+
+
+    if (closeWin) winnerScreen.style.display = 'none';
+    renderQuestion();        
+  }
+
+
+  function resetRace() {
+    fullReset(true);
+    statusEl.className   = 'status';
+    statusEl.textContent = '⏸ Дахин эхлүүлсэн. ▶ дарж timer асаана уу.';
+    beep(620, 0.08);
+  }
+  renderQuestion();
+  statusEl.textContent = '⏸ TIMER эхлүүлэхэд тоглоом эхэлнэ.';
+</script>
+</body>
+</html>
+
+
